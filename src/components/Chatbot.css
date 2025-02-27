@@ -123,3 +123,10 @@
 .ant-select-selection-item {
   background-color: #f0f0f0 !important;
 }
+
+.loading-container {
+  min-height: 32px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}

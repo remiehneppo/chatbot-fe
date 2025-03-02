@@ -4,6 +4,7 @@ import Home from './components/Home';
 import Chatbot from './components/Chatbot';
 import Tasks from './components/Tasks';
 import Profile from './components/Profile';
+import DocumentSearch from './components/DocumentSearch';
 import './App.css';
 
 function App() {
@@ -28,6 +29,11 @@ function App() {
         <Route path="/profile" element={
           <MainLayout>
             <Profile />
+          </MainLayout>
+        } />
+        <Route path="/document-search" element={
+          <MainLayout>
+            <DocumentSearch />
           </MainLayout>
         } />
       </Routes>

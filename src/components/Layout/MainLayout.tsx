@@ -1,7 +1,7 @@
 import React from 'react';
 import { Layout, Menu } from 'antd';
 import { Link, useLocation } from 'react-router-dom';
-import { HomeOutlined, RobotOutlined, ProfileOutlined, ScheduleOutlined } from '@ant-design/icons';
+import { HomeOutlined, RobotOutlined, ProfileOutlined, ScheduleOutlined, SearchOutlined } from '@ant-design/icons';
 import './MainLayout.css';
 const { Header, Content } = Layout;
 
@@ -33,11 +33,16 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
       icon: <ProfileOutlined />,
       label: <Link to="/profile">Profile</Link>,
     },
+    {
+      key: '/document-search',
+      icon: <SearchOutlined />,
+      label: <Link to="/document-search">Tìm kiếm tài liệu</Link>,
+    },
   ];
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
-      <Header style={{ padding: 0, background: '#fff' }}>
+      <Header style={{ padding: 0, background: '#fff', height: '48px', lineHeight: '48px' }}>
         <Menu
           theme="light"
           mode="horizontal"
@@ -46,7 +51,16 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
           style={{ justifyContent: 'center' }}
         />
       </Header>
-      <Content className='main-content' style={{ padding: '24px', display: 'flex', justifyContent: 'center' }}>
+      <Content 
+        className='main-content' 
+        style={{ 
+          padding: '12px',
+          height: 'calc(100vh - 48px)',
+          display: 'flex',
+          justifyContent: 'center',
+          overflow: 'hidden'
+        }}
+      >
         {children}
       </Content>
     </Layout>

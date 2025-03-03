@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Input, Card, Tag, Space, Empty, Select, InputNumber, Typography, Button, Col, Row } from 'antd';
+import { Input, Card, Tag, Space, Empty, Select, InputNumber, Typography, Button, Col, Row, message } from 'antd';
 import { SearchOutlined, DownOutlined, UpOutlined } from '@ant-design/icons';
 const { Text, Title } = Typography;
 
@@ -115,6 +115,28 @@ const DocumentSearch = () => {
     }
   };
 
+  const handleViewPdf = async (filename: string, pageNumber?: string) => {
+    try {
+      const response = await fetch(`http://localhost:8888/api/v1/pdf?file=${encodeURIComponent(filename)}`, {
+        method: 'GET',
+      });
+  
+      if (!response.ok) {
+        throw new Error('Failed to fetch PDF');
+      }
+  
+      // Create blob from response and open in new window with page number
+      const blob = await response.blob();
+      const fileUrl = window.URL.createObjectURL(blob);
+      // Add page number to URL if available
+      const urlWithPage = pageNumber ? `${fileUrl}#page=${pageNumber}` : fileUrl;
+      window.open(urlWithPage, '_blank');
+    } catch (error) {
+      console.error('Error viewing PDF:', error);
+      message.error('Failed to open PDF file');
+    }
+  };
+
   const toggleExpand = (id: string) => {
     setExpandedId(expandedId === id ? null : id);
   };
@@ -158,7 +180,18 @@ const DocumentSearch = () => {
                   className="document-card"
                   title={
                     <Space direction="vertical" size={0}>
-                      <Title level={5} style={{ margin: 0 }}>
+                      <Title 
+                        level={5} 
+                        style={{ 
+                          margin: 0,
+                          cursor: 'pointer',
+                          color: '#1890ff'
+                        }}
+                        onClick={() => handleViewPdf(
+                          doc.metadata.title + ".pdf",
+                          doc.metadata.custom?.page
+                        )}
+                      >
                         {doc.metadata.title}
                       </Title>
                       <Space split={<Text type="secondary">|</Text>}>

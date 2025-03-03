@@ -42,7 +42,7 @@
 
 /* Message styles */
 .user-message, .bot-message {
-  max-width: 70%;
+  max-width: 100%;
   padding: 10px 15px;
   border-radius: 15px;
   margin: 5px 0;

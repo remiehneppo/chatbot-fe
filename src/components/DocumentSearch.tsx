@@ -1,7 +1,6 @@
 import { useState } from 'react';
-import { Input, Card, List, Tag, Space, Empty, Select, InputNumber, Typography, Button } from 'antd';
+import { Input, Card, Tag, Space, Empty, Select, InputNumber, Typography, Button, Col, Row } from 'antd';
 import { SearchOutlined, DownOutlined, UpOutlined } from '@ant-design/icons';
-import ReactMarkdown from 'react-markdown';
 const { Text, Title } = Typography;
 
 interface Metadata {
@@ -34,17 +33,36 @@ interface SearchResponse {
   documents: Document[];
 }
 
+const highlightText = (text: string, queries: string[]): string => {
+  if (!queries.length) return text;
+  
+  const pattern = queries
+    .filter(q => q.trim())
+    .map(q => q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+    .join('|');
+  
+  if (!pattern) return text;
+  
+  return text.replace(new RegExp(`(${pattern})`, 'gi'), '<mark>$1</mark>');
+};
+
 const DocumentSearch = () => {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [limit, setLimit] = useState(10);
-  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [queries, setQueries] = useState<string[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSearch = async (value: string) => {
-    if (!value.trim() && selectedTags.length === 0) {
+    setError(null); // Reset error state before new search
     
+    const newQueries = value.trim() ? value.split(',').filter(q => q.length > 0) : [];
+    setQueries(newQueries);
+    
+    if (!value.trim() && selectedTags.length === 0) {
       setDocuments([]);
       return;
     }
@@ -83,24 +101,22 @@ const DocumentSearch = () => {
       if (responseData.status === 'success') {
         console.log('Search results:', responseData.data.documents); // Debug log
         setDocuments(responseData.data.documents);
+        if (!responseData.data.documents || responseData.data.documents.length === 0) {
+          setError('No matching documents found');
+        }
       } else {
         throw new Error(responseData.message);
       }
     } catch (error) {
       console.error('Search error:', error);
+      setError(error instanceof Error ? error.message : 'An unexpected error occurred');
     } finally {
       setLoading(false);
     }
   };
 
   const toggleExpand = (id: string) => {
-    const newExpanded = new Set(expandedIds);
-    if (expandedIds.has(id)) {
-      newExpanded.delete(id);
-    } else {
-      newExpanded.add(id);
-    }
-    setExpandedIds(newExpanded);
+    setExpandedId(expandedId === id ? null : id);
   };
 
   return (
@@ -134,52 +150,45 @@ const DocumentSearch = () => {
           />
         </Space>
 
-        <List
-          className="document-list"
-          loading={loading}
-          dataSource={documents}
-          locale={{
-            emptyText: <Empty description="No documents found" />
-          }}
-          renderItem={(doc) => (
-            <List.Item 
-              className="document-list-item"
-              actions={[
-                <Button
-                  type="link"
-                  onClick={() => toggleExpand(doc.id)}
-                  icon={expandedIds.has(doc.id) ? <UpOutlined /> : <DownOutlined />}
-                >
-                  {expandedIds.has(doc.id) ? 'Show less' : 'Show more'}
-                </Button>
-              ]}
-            >
-              <List.Item.Meta
-                title={
-                  <Space direction="vertical" size={0}>
-                    <Title level={5} style={{ margin: 0 }}>
-                      {doc.metadata.title}
-                    </Title>
-                    <Space split={<Text type="secondary">|</Text>}>
-                      {doc.metadata.source && (
+        <Row gutter={[16, 16]}>
+          {documents?.length > 0 ? (
+            documents.map(doc => (
+              <Col xs={24} key={doc.id}>
+                <Card
+                  className="document-card"
+                  title={
+                    <Space direction="vertical" size={0}>
+                      <Title level={5} style={{ margin: 0 }}>
+                        {doc.metadata.title}
+                      </Title>
+                      <Space split={<Text type="secondary">|</Text>}>
+                        {doc.metadata.source && (
+                          <Text type="secondary">
+                            Source: {doc.metadata.source}
+                          </Text>
+                        )}
                         <Text type="secondary">
-                          Source: {doc.metadata.source}
+                          Created: {new Date(doc.created_at * 1000).toLocaleDateString()}
                         </Text>
-                      )}
-                      <Text type="secondary">
-                        Created: {new Date(doc.created_at * 1000).toLocaleDateString()}
-                      </Text>
-                      {doc.metadata.custom?.page && (
-                        <Text type="secondary">
-                          Page: {doc.metadata.custom.page}
-                        </Text>
-                      )}
+                        {doc.metadata.custom?.page && (
+                          <Text type="secondary">
+                            Page: {doc.metadata.custom.page}
+                          </Text>
+                        )}
+                      </Space>
                     </Space>
-                  </Space>
-                }
-                description={
+                  }
+                  extra={
+                    <Button
+                      type="link"
+                      onClick={() => toggleExpand(doc.id)}
+                      icon={expandedId === doc.id ? <UpOutlined /> : <DownOutlined />}
+                    >
+                      {expandedId === doc.id ? 'Show less' : 'Show more'}
+                    </Button>
+                  }
+                >
                   <Space direction="vertical" style={{ width: '100%' }} size={12}>
-                    {/* Tags section */}
                     <Space size={[0, 8]} wrap>
                       {doc.metadata.tags.map(tag => (
                         <Tag 
@@ -198,24 +207,41 @@ const DocumentSearch = () => {
                       ))}
                     </Space>
                     
-                    {/* Content preview/full section */}
-                    <div className="document-content" style={{ textAlign: 'justify' }}>
-                      {expandedIds.has(doc.id) ? (
-                        <ReactMarkdown>
-                          {'...' + doc.content + '...'}
-                        </ReactMarkdown>
-                      ) : (
-                        <ReactMarkdown >
-                          {'...' + doc.content.substring(0, 200) + '...'}
-                        </ReactMarkdown>
-                      )}
-                    </div>
+                    <div 
+                      className="document-content" 
+                      style={{ textAlign: 'left' }}
+                      dangerouslySetInnerHTML={{ 
+                        __html: expandedId === doc.id 
+                          ? highlightText(doc.content, queries)
+                          : highlightText(doc.content.substring(0, 200) + '...', queries)
+                      }}
+                    />
+                  </Space>
+                </Card>
+              </Col>
+            ))
+          ) : !loading && (
+            <Col span={24}>
+              <Empty
+                description={
+                  <Space direction="vertical" align="center">
+                    <Text type="secondary">{error || "No documents found"}</Text>
+                    {searchTerm && (
+                      <Button onClick={() => {
+                        setSearchTerm('');
+                        setSelectedTags([]);
+                        setDocuments([]);
+                        setError(null);
+                      }}>
+                        Clear search
+                      </Button>
+                    )}
                   </Space>
                 }
               />
-            </List.Item>
+            </Col>
           )}
-        />
+        </Row>
       </Space>
     </Card>
   );

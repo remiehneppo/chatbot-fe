@@ -55,6 +55,8 @@ const DocumentSearch = () => {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [queries, setQueries] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [aiQuestion, setAiQuestion] = useState('');
+  const [isAskingAI, setIsAskingAI] = useState(false);
 
   const handleSearch = async (value: string) => {
     setError(null); // Reset error state before new search
@@ -137,6 +139,50 @@ const DocumentSearch = () => {
     }
   };
 
+  const handleAskAI = async () => {
+    if (!aiQuestion.trim()) {
+      message.warning('Please enter a question');
+      return;
+    }
+  
+    setIsAskingAI(true);
+    try {
+      const askAIRequest = {
+        question: aiQuestion,
+        search_request: {
+          queries: searchTerm.trim() ? searchTerm.split(',').filter(q => q.length > 0) : [],
+          tags: selectedTags.length > 0 ? selectedTags : undefined,
+          limit: limit
+        }
+      };
+  
+      const response = await fetch('http://localhost:8888/api/v1/documents/ask-ai', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify(askAIRequest)
+      });
+  
+      if (!response.ok) {
+        throw new Error('Failed to get AI response');
+      }
+  
+      const responseData = await response.json();
+      if (responseData.status === 'success') {
+        setDocuments(responseData.data.documents);
+      } else {
+        throw new Error(responseData.message);
+      }
+    } catch (error) {
+      console.error('AI error:', error);
+      message.error('Failed to get AI response');
+    } finally {
+      setIsAskingAI(false);
+    }
+  };
+
   const toggleExpand = (id: string) => {
     setExpandedId(expandedId === id ? null : id);
   };
@@ -144,16 +190,47 @@ const DocumentSearch = () => {
   return (
     <Card title="Tìm kiếm tài liệu" className="search-container">
       <Space direction="vertical" size="middle" style={{ width: '100%' }}>
-        <Input.Search
-          placeholder="Search documents..."
-          enterButton={<SearchOutlined />}
-          size="large"
-          loading={loading}
-          onSearch={handleSearch}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          value={searchTerm}
-        />
-        
+        <Row gutter={[16, 16]} align="middle">
+          <Col span={14}>
+            <Input.Search
+              placeholder="Search documents..."
+              enterButton={<SearchOutlined />}
+              size="large"
+              loading={loading}
+              onSearch={handleSearch}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              value={searchTerm}
+            />
+          </Col>
+          <Col span={10}>
+            <Space.Compact style={{ width: '100%' }}>
+              <Input.TextArea
+                placeholder="Ask AI about documents..."
+                value={aiQuestion}
+                onChange={(e) => setAiQuestion(e.target.value)}
+                style={{ width: '75%', height: '100%' }}
+                rows={1}
+                size="large"
+              />
+              <Button 
+                type="primary"
+                onClick={handleAskAI}
+                loading={isAskingAI}
+                style={{ 
+                  width: '25%', 
+                  height: '41px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+                size="large"
+              >
+                Ask AI
+              </Button>
+            </Space.Compact>
+          </Col>
+        </Row>
+
         <Space>
           <Select
             mode="tags"
@@ -240,15 +317,23 @@ const DocumentSearch = () => {
                       ))}
                     </Space>
                     
-                    <div 
-                      className="document-content" 
-                      style={{ textAlign: 'left' }}
-                      dangerouslySetInnerHTML={{ 
-                        __html: expandedId === doc.id 
-                          ? highlightText(doc.content, queries)
-                          : highlightText(doc.content.substring(0, 200) + '...', queries)
-                      }}
-                    />
+                    <div className="document-content" style={{ textAlign: 'left' }}>
+                      <div
+                        dangerouslySetInnerHTML={{ 
+                          __html: expandedId === doc.id 
+                            ? highlightText(doc.content, queries)
+                            : highlightText(doc.content.substring(0, 200) + '...', queries)
+                        }}
+                      />
+                      {doc.metadata.custom?.generative && (
+                        <div style={{ marginTop: 16, borderTop: '1px solid #f0f0f0', paddingTop: 16 }}>
+                          <Text strong>AI Response:</Text>
+                          <div style={{ marginTop: 8 }}>
+                            {doc.metadata.custom.generative}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </Space>
                 </Card>
               </Col>

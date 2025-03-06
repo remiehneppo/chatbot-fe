@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Input, Button, Card, List, Spin } from "antd";
 import { SendOutlined } from "@ant-design/icons";
 import ReactMarkdown from 'react-markdown';
+import { config } from '../config/config';
 import "./Chatbot.css";
 
 interface Message {
@@ -26,7 +27,7 @@ const Chatbot = () => {
 
   const sendChatMessage = async (messages: Message[]): Promise<Message | null> => {
     try {
-      const response = await fetch('http://localhost:8888/api/v1/chat', {
+      const response = await fetch(`${config.apiUrl}/api/v1/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

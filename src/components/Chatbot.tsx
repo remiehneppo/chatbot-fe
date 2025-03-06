@@ -66,7 +66,7 @@ const Chatbot = () => {
 
   return (
     <Card 
-      title="Chatbot AI" 
+      title="Trợ lý ảo AI" 
       className="chat-container"
     >
       <List

@@ -142,7 +142,7 @@ const DocumentSearch = () => {
   };
 
   return (
-    <Card title="Document Search" className="search-container">
+    <Card title="Tìm kiếm tài liệu" className="search-container">
       <Space direction="vertical" size="middle" style={{ width: '100%' }}>
         <Input.Search
           placeholder="Search documents..."
@@ -188,7 +188,7 @@ const DocumentSearch = () => {
                           color: '#1890ff'
                         }}
                         onClick={() => handleViewPdf(
-                          doc.metadata.title + ".pdf",
+                          doc.metadata.title,
                           doc.metadata.custom?.page
                         )}
                       >

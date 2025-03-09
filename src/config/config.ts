@@ -7,5 +7,5 @@ declare global {
 }
 
 export const config = {
-  apiUrl: window.ENV?.VITE_BE_HOST || 'http://localhost:88888'
+  apiUrl: import.meta.env.VITE_BE_HOST || window.ENV?.VITE_BE_HOST
 };

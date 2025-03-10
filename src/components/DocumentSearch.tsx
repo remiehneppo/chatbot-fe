@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Input, Card, Tag, Space, Empty, Select, InputNumber, Typography, Button, Col, Row, message } from 'antd';
 import { SearchOutlined, DownOutlined, UpOutlined } from '@ant-design/icons';
 const { Text, Title } = Typography;
+import { config } from '../config/config';
 
 interface Metadata {
   title: string;
@@ -79,7 +80,7 @@ const DocumentSearch = () => {
 
       console.log('Sending request:', searchRequest); // Debug log
 
-      const response = await fetch('http://localhost:8888/api/v1/documents/search', {
+      const response = await fetch(`${config.apiUrl}/api/v1/documents/search`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -119,7 +120,7 @@ const DocumentSearch = () => {
 
   const handleViewPdf = async (filename: string, pageNumber?: string) => {
     try {
-      const response = await fetch(`http://localhost:8888/api/v1/pdf?file=${encodeURIComponent(filename)}`, {
+      const response = await fetch(`${config.apiUrl}/api/v1/pdf?file=${encodeURIComponent(filename)}`, {
         method: 'GET',
       });
   
@@ -156,7 +157,7 @@ const DocumentSearch = () => {
         }
       };
   
-      const response = await fetch('http://localhost:8888/api/v1/documents/ask-ai', {
+      const response = await fetch(`${config.apiUrl}/api/v1/documents/ask-ai`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

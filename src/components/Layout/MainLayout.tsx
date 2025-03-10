@@ -113,7 +113,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
       <Footer
         style={{
           textAlign: 'center',
-          background: '#001529',
+          background: '#69b1ff',
           color: '#fff',
           height: '64px',
           padding: '12px',

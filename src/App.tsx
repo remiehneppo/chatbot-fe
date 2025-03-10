@@ -6,6 +6,7 @@ import Tasks from './components/Tasks';
 import Profile from './components/Profile';
 import DocumentSearch from './components/DocumentSearch';
 import './App.css';
+import Login from './components/Login';
 
 function App() {
   return (
@@ -34,6 +35,11 @@ function App() {
         <Route path="/document-search" element={
           <MainLayout>
             <DocumentSearch />
+          </MainLayout>
+        } />
+        <Route path="/login" element={
+          <MainLayout>
+            <Login />
           </MainLayout>
         } />
       </Routes>

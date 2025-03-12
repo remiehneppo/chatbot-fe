@@ -33,8 +33,6 @@ const Login = () => {
       console.error('Login failed:', error);
       message.error('Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.');
 
-      // test
-      localStorage.setItem('user_token', "fake")
     }
   };
 

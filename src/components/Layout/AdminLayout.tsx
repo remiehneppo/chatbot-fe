@@ -1,6 +1,12 @@
-import React, { useEffect } from 'react';
-import { Layout, Menu, Avatar, Dropdown } from 'antd';
-import { DashboardOutlined, UserOutlined, FileOutlined, LogoutOutlined } from '@ant-design/icons';
+import React, { useEffect, useState } from 'react';
+import { Layout, Menu, Avatar, Dropdown, Button, message } from 'antd';
+import { 
+  DashboardOutlined, 
+  UserOutlined, 
+  FileOutlined, 
+  LogoutOutlined,
+  LoginOutlined 
+} from '@ant-design/icons';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 const { Header, Content, Sider } = Layout;
@@ -8,9 +14,11 @@ const { Header, Content, Sider } = Layout;
 const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
     const adminToken = localStorage.getItem('admin_token');
+    setIsLoggedIn(!!adminToken);
     if (!adminToken) {
       navigate('/admin/login');
     }
@@ -18,6 +26,8 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
   const handleLogout = () => {
     localStorage.removeItem('admin_token');
+    message.success('Đăng xuất thành công');
+    setIsLoggedIn(false);
     navigate('/admin/login');
   };
 
@@ -72,22 +82,32 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           </div>
         </div>
         <div className="flex items-center">
-          <Dropdown 
-            menu={{ items: userMenuItems }}
-            trigger={['click']}
-            placement="bottomRight"
-          >
-            <div className="flex items-center cursor-pointer">
-              <Avatar 
-                style={{ 
-                  backgroundColor: '#1890ff',
-                  marginRight: '8px' 
-                }}
-                icon={<UserOutlined />}
-              />
-              <span className="text-gray-700">Admin</span>
-            </div>
-          </Dropdown>
+          {isLoggedIn ? (
+            <Dropdown 
+              menu={{ items: userMenuItems }}
+              trigger={['click']}
+              placement="bottomRight"
+            >
+              <div className="flex items-center cursor-pointer">
+                <Avatar 
+                  style={{ 
+                    backgroundColor: '#1890ff',
+                    marginRight: '8px' 
+                  }}
+                  icon={<UserOutlined />}
+                />
+                <span className="text-gray-700">Admin</span>
+              </div>
+            </Dropdown>
+          ) : (
+            <Button 
+              type="primary" 
+              icon={<LoginOutlined />}
+              onClick={() => navigate('/admin/login')}
+            >
+              Đăng nhập
+            </Button>
+          )}
         </div>
       </Header>
       <Layout>

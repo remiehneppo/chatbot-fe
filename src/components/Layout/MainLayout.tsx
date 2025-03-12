@@ -1,7 +1,15 @@
 import React from 'react';
-import { Layout, Menu, Typography, Space } from 'antd';
-import { Link, useLocation } from 'react-router-dom';
-import { HomeOutlined, RobotOutlined, ProfileOutlined, ScheduleOutlined, SearchOutlined, GithubOutlined } from '@ant-design/icons';
+import { Layout, Menu, Typography, Space, Button } from 'antd';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { 
+  HomeOutlined, 
+  RobotOutlined, 
+  ProfileOutlined, 
+  ScheduleOutlined, 
+  SearchOutlined, 
+  GithubOutlined,
+  LogoutOutlined 
+} from '@ant-design/icons';
 import './MainLayout.css';
 const { Header, Content, Footer } = Layout;
 const { Title, Text, Link: AntLink } = Typography;
@@ -12,6 +20,22 @@ interface MainLayoutProps {
 
 const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const [isLoggedIn, setIsLoggedIn] = React.useState(false); // Add authentication state
+
+  // Add logout handler
+  const handleLogout = () => {
+    // Add your logout logic here (e.g., clear token from localStorage)
+    localStorage.removeItem('user_token');
+    setIsLoggedIn(false);
+    navigate('/login');
+  };
+
+  // Check authentication status on component mount
+  React.useEffect(() => {
+    const token = localStorage.getItem('user_token');
+    setIsLoggedIn(!!token);
+  }, []);
 
   const menuItems = [
     {
@@ -70,7 +94,17 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
           </Title>
         </Space>
         <Space>
-          <Text style={{ color: '#fff' }}>Version 1.0</Text>
+          <Text style={{ color: '#fff', marginRight: '16px' }}>Version 1.0</Text>
+          {isLoggedIn && (
+            <Button 
+              type="primary" 
+              danger 
+              icon={<LogoutOutlined />}
+              onClick={handleLogout}
+            >
+              Đăng xuất
+            </Button>
+          )}
         </Space>
       </Header>
       

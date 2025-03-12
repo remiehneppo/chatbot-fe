@@ -4,6 +4,7 @@ import { SendOutlined, PlusOutlined } from "@ant-design/icons";
 import ReactMarkdown from 'react-markdown';
 import { config } from '../config/config';
 import "./Chatbot.css";
+import { api } from "../services/api";
 
 interface Message {
   role: string;
@@ -16,8 +17,12 @@ interface ChatRequest {
 }
 
 interface ChatResponse {
-  chat_id: string;
-  message: Message;
+  status : boolean;
+  message: string;
+  data: {
+    chat_id: string;
+    message: Message;
+  }
 }
 
 const Chatbot = () => {
@@ -66,26 +71,20 @@ const Chatbot = () => {
 
   const sendChatMessage = async (messages: Message[]): Promise<Message | null> => {
     try {
-      const response = await fetch(`${config.apiUrl}/api/v1/chat`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          messages,
-          chat_id: chatId 
-        } as ChatRequest)
-      });
+      const response = await api.post<ChatResponse>("/api/v1/chat", {
+        chat_id: chatId,
+        messages
+      })
 
-      if (!response.ok) throw new Error('Network response was not ok');
+      if (!response.status) throw new Error('Network response was not ok');
       
-      const data: ChatResponse = await response.json();
+      const chatRes = await response.data;
       // Save chat ID if it's a new conversation
       if (!chatId) {
-        setChatId(data.chat_id);
-        localStorage.setItem('chatId', data.chat_id);
+        setChatId(chatRes.data.chat_id);
+        localStorage.setItem('chatId', chatRes.data.chat_id);
       }
-      return data.message;
+      return chatRes.data.message;
     } catch (error) {
       console.error('Error:', error);
       return null;

@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
-import { Input, Button, Card, List, Spin, Space } from "antd";
-import { SendOutlined, PlusOutlined } from "@ant-design/icons";
+import { Input, Button, Card, List, Spin, Space, Typography, Collapse } from "antd";
+import { SendOutlined, PlusOutlined, BulbOutlined } from "@ant-design/icons";
 import ReactMarkdown from 'react-markdown';
-import { config } from '../config/config';
 import "./Chatbot.css";
 import { api } from "../services/api";
 
@@ -24,6 +23,52 @@ interface ChatResponse {
     message: Message;
   }
 }
+
+// Add this new component for rendering messages with thinking sections
+const BotMessageRenderer = ({ content }: { content: string }) => {
+  // Check if the message contains thinking tags
+  const thinkMatch = content.match(/<think>([\s\S]*?)<\/think>\s*([\s\S]*)/);
+  
+  if (!thinkMatch) {
+    // Regular message without thinking section
+    return <ReactMarkdown>{content}</ReactMarkdown>;
+  }
+  
+  const [thinking, actualResponse] = [thinkMatch[1].trim(), thinkMatch[2].trim()];
+  
+  return (
+    <div className="bot-message-container">
+      {thinking && (
+        <Collapse 
+          className="thinking-collapse"
+          size="small"
+          ghost
+          items={[
+            {
+              key: '1',
+              label: (
+                <Typography.Text type="secondary">
+                  <BulbOutlined /> Show thinking process
+                </Typography.Text>
+              ),
+              children: (
+                <div className="thinking-content">
+                  <Typography.Text type="secondary" italic>
+                    <ReactMarkdown>{thinking}</ReactMarkdown>
+                  </Typography.Text>
+                </div>
+              )
+            }
+          ]}
+        />
+      )}
+      
+      <div className="actual-response">
+        <ReactMarkdown>{actualResponse}</ReactMarkdown>
+      </div>
+    </div>
+  );
+};
 
 const Chatbot = () => {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -148,7 +193,7 @@ const Chatbot = () => {
               {msg.role === "user" ? (
                 msg.content
               ) : (
-                <ReactMarkdown>{msg.content}</ReactMarkdown>
+                <BotMessageRenderer content={msg.content} />
               )}
             </div>
           </List.Item>

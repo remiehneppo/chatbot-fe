@@ -137,3 +137,24 @@
   justify-content: space-between;
   align-items: center;
 }
+
+.thinking-collapse {
+  margin-bottom: 12px;
+  border-bottom: 1px dashed #e8e8e8;
+  padding-bottom: 8px;
+}
+
+.thinking-content {
+  background-color: #f5f5f5;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
+.actual-response {
+  margin-top: 8px;
+}
+
+.bot-message-container {
+  width: 100%;
+}

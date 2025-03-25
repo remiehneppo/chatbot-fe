@@ -3,6 +3,7 @@ import { Input, Card, Tag, Space, Empty, Select, InputNumber, Typography, Button
 import { SearchOutlined, DownOutlined, UpOutlined } from '@ant-design/icons';
 const { Text, Title } = Typography;
 import { config } from '../config/config';
+import { api } from '../services/api';
 
 interface Metadata {
   title: string;
@@ -25,7 +26,7 @@ interface SearchRequest {
 }
 
 interface DataResponse<T> {
-  status: string;
+  status: boolean;
   message: string;
   data: T;
 }
@@ -78,38 +79,35 @@ const DocumentSearch = () => {
         limit: limit
       };
 
-      console.log('Sending request:', searchRequest); // Debug log
+      console.log('Sending request:', searchRequest);
 
-      const response = await fetch(`${config.apiUrl}/api/v1/documents/search`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: JSON.stringify(searchRequest)
-      });
+      // With Axios, we don't need to await response.data - it's already resolved
+      const response = await api.post<DataResponse<SearchResponse>>('/api/v1/documents/search', searchRequest);
 
-      console.log('Response status:', response.status); // Debug log
-      console.log('Response headers:', Object.fromEntries(response.headers.entries())); // Debug log
+      console.log('Response status:', response.status);
+      console.log('Response data:', response.data);
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Error response:', errorText); // Debug log
-        throw new Error(`Search failed: ${errorText}`);
+      // Check for valid response
+      if (response.status !== 200) {
+        throw new Error('Failed to search documents');
       }
-      
-      const responseData: DataResponse<SearchResponse> = await response.json();
-      console.log('Response data:', responseData); // Debug log
 
-      if (responseData.status === 'success') {
-        console.log('Search results:', responseData.data.documents); // Debug log
+      // No need to await response.data as it's already resolved by axios
+      const responseData = response.data;
+      
+      if (responseData && !responseData.status) {
+        console.log('Search results:', responseData.data.documents);
         setDocuments(responseData.data.documents);
         if (!responseData.data.documents || responseData.data.documents.length === 0) {
           setError('No matching documents found');
         }
-      } else {
-        throw new Error(responseData.message);
       }
+
+      if (responseData.data.documents.length === 0) {
+        setError('No matching documents found');
+      }
+      setDocuments(responseData.data.documents);
+
     } catch (error) {
       console.error('Search error:', error);
       setError(error instanceof Error ? error.message : 'An unexpected error occurred');
@@ -120,20 +118,29 @@ const DocumentSearch = () => {
 
   const handleViewPdf = async (filename: string, pageNumber?: string) => {
     try {
-      const response = await fetch(`${config.apiUrl}/api/v1/pdf?file=${encodeURIComponent(filename)}`, {
-        method: 'GET',
-      });
-  
-      if (!response.ok) {
-        throw new Error('Failed to fetch PDF');
+       // Set proper responseType for binary data
+    const response = await api.get(`/api/v1/pdf`, {
+      params: { file: filename },
+      responseType: 'blob', // This is critical for binary data
+      headers: {
+        'Accept': 'application/pdf'
       }
-  
-      // Create blob from response and open in new window with page number
-      const blob = await response.blob();
-      const fileUrl = window.URL.createObjectURL(blob);
-      // Add page number to URL if available
-      const urlWithPage = pageNumber ? `${fileUrl}#page=${pageNumber}` : fileUrl;
-      window.open(urlWithPage, '_blank');
+    });
+    
+    // Check if we received data
+    if (!response.data) {
+      throw new Error('No data received from server');
+    }
+    
+    // Create a blob URL from the response data
+    const blob = new Blob([response.data], { type: 'application/pdf' });
+    const fileUrl = window.URL.createObjectURL(blob);
+
+    // Add page number to URL if available
+    const urlWithPage = pageNumber ? `${fileUrl}#page=${pageNumber}` : fileUrl;
+    
+    // Open in a new tab
+    window.open(urlWithPage, '_blank');
     } catch (error) {
       console.error('Error viewing PDF:', error);
       message.error('Failed to open PDF file');
@@ -157,25 +164,28 @@ const DocumentSearch = () => {
         }
       };
   
-      const response = await fetch(`${config.apiUrl}/api/v1/documents/ask-ai`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: JSON.stringify(askAIRequest)
-      });
+      // const response = await fetch(`${config.apiUrl}/api/v1/documents/ask-ai`, {
+      //   method: 'POST',
+      //   headers: {
+      //     'Content-Type': 'application/json',
+      //     'Accept': 'application/json',
+      //   },
+      //   body: JSON.stringify(askAIRequest)
+      // });
+      const response = await api.post<DataResponse<SearchResponse>>('/api/v1/documents/ask-ai', askAIRequest);
   
-      if (!response.ok) {
+      if (response.status !== 200) {
         throw new Error('Failed to get AI response');
       }
   
-      const responseData = await response.json();
-      if (responseData.status === 'success') {
+      const responseData = await response.data;
+      if (!responseData.status) {
         setDocuments(responseData.data.documents);
-      } else {
-        throw new Error(responseData.message);
       }
+      if (responseData.data.documents.length === 0) {
+        setError('No matching documents found');
+      }
+      setDocuments(responseData.data.documents);
     } catch (error) {
       console.error('AI error:', error);
       message.error('Failed to get AI response');

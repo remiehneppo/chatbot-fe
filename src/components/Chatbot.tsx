@@ -203,13 +203,21 @@ const Chatbot = () => {
         {loading && <Spin />}
       </div>
       <div className="chat-input">
-        <Input
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="Nhập tin nhắn..."
-          onPressEnter={handleSend}
-          disabled={loading}
-        />
+      <Input.TextArea
+        value={input}
+        onChange={(e) => setInput(e.target.value)}
+        placeholder="Nhập tin nhắn..."
+        disabled={loading}
+        autoSize={{ minRows: 1, maxRows: 5 }}
+        onKeyDown={(e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+          // Send message on Enter without Shift key
+          if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            handleSend();
+          }
+        }}
+        className="chat-textarea"
+      />
         <Button 
           type="primary" 
           icon={<SendOutlined />} 
